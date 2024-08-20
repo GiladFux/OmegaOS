@@ -4,7 +4,7 @@ mod vga_buffer;
 use core::panic::PanicInfo;
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
-    println!("Hello World{}", "!");
+    print!("Hello\tWorld{}", "!");
     loop {}
 }
 
