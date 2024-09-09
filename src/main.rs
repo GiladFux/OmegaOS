@@ -5,6 +5,7 @@
 #![test_runner(crate::test_runner)]
 
 mod vga_buffer;
+mod serial;
 use core::panic::PanicInfo;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
