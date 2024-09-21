@@ -7,6 +7,7 @@
 pub mod serial;
 pub mod vga_buffer;
 pub mod interrupts;
+pub mod gdt;
 use core::panic::PanicInfo;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
@@ -69,5 +70,7 @@ fn panic(info: &PanicInfo) -> ! {
     test_panic_handler(info)
 }
 pub fn init() {
+    gdt::init();
     interrupts::init_idt();
+
 }
