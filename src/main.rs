@@ -10,9 +10,9 @@ use omega::println;
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     println!("Hello World{}", "!");
-
-    #[cfg(test)]
-    test_main();
+    omega::init();
+    x86_64::instructions::interrupts::int3();
+    println!("It did not crash!");
 
     loop {}
 }
