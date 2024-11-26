@@ -35,3 +35,18 @@ extern "x86-interrupt" fn double_fault_handler(
 fn test_breakpoint_exception() {
     x86_64::instructions::interrupts::int3();
 }
+
+use pic8259::ChainedPics;
+use spin;
+
+pub const PIC_1_OFFSET: u8 = 32; //sets up the offset of the first PIC (since first 32 are already caught by the excepetions)
+pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8; //setts up the offset of second PIC
+
+pub static PICS: spin::Mutex<ChainedPics> =
+    spin::Mutex::new(unsafe {
+        // Initialize a new ChainedPics instance with the specified offsets for the two PICs.
+        // This remaps the interrupt vectors so they do not overlap with CPU exceptions (0-31).
+        // The unsafe block is necessary because this operation directly interacts with
+        // hardware and assumes that the offsets provided are valid.
+        ChainedPics::new(PIC_1_OFFSET, PIC_2_OFFSET)
+    });
