@@ -50,3 +50,20 @@ pub static PICS: spin::Mutex<ChainedPics> =
         // hardware and assumes that the offsets provided are valid.
         ChainedPics::new(PIC_1_OFFSET, PIC_2_OFFSET)
     });
+
+
+#[derive(Debug, Clone, Copy)]
+#[repr(u8)]
+pub enum InterruptIndex {
+    Timer = PIC_1_OFFSET,
+}
+
+impl InterruptIndex {
+    fn as_u8(self) -> u8 {
+        self as u8
+    }
+
+    fn as_usize(self) -> usize {
+        usize::from(self.as_u8())
+    }
+}
