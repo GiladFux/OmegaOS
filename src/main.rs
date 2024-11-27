@@ -13,7 +13,10 @@ pub extern "C" fn _start() -> ! {
     omega::init();
     println!("It did not crash!");
 
-    loop {}
+    loop {
+        use omega::print;
+        print!("-");        // new
+    }
 }
 
 /// This function is called on panic.

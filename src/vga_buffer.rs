@@ -64,12 +64,15 @@ macro_rules! println {
     () => ($crate::print!("\n"));
     ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
 }
-
+// Prints the given formatted string to the VGA text buffer
+// through the global WRITER instance.
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
-    WRITER.lock().write_fmt(args).unwrap();
-}
+    use x86_64::instructions::interrupts;   
+    interrupts::without_interrupts(|| {     // disable interrupts while the mutex is locked in order to avoid deadlocks
+        WRITER.lock().write_fmt(args).unwrap();
+    });}
 
 
 impl Writer {
