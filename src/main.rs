@@ -11,6 +11,8 @@ use omega::println;
 pub extern "C" fn _start() -> ! {
     println!("Hello World{}", "!");
     omega::init();
+    #[cfg(test)]
+    test_main();
     println!("It did not crash!");
     omega::hlt_loop();
 }
