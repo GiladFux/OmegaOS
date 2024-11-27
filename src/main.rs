@@ -12,11 +12,7 @@ pub extern "C" fn _start() -> ! {
     println!("Hello World{}", "!");
     omega::init();
     println!("It did not crash!");
-
-    loop {
-        use omega::print;
-        print!("-");        // new
-    }
+    omega::hlt_loop();
 }
 
 /// This function is called on panic.
@@ -24,7 +20,7 @@ pub extern "C" fn _start() -> ! {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
-    loop {}
+    omega::hlt_loop();
 }
 
 #[cfg(test)]
