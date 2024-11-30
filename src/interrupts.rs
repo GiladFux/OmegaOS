@@ -47,12 +47,44 @@ extern "x86-interrupt" fn timer_interrupt_handler(
 extern "x86-interrupt" fn keyboard_interrupt_handler(
     _stack_frame: InterruptStackFrame)
 {
+    // Importing necessary modules and dependencies for handling keyboard input
+    use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
+    use spin::Mutex;
     use x86_64::instructions::port::Port;
 
-    let mut port = Port::new(0x60); // port mapped io
-    let scancode: u8 = unsafe { port.read() };
-    print!("{}", scancode);
+    // Define a global static keyboard instance protected by a Mutex for thread safety.
+    // This ensures exclusive access to the keyboard during input processing.
+    lazy_static! {
+        static ref KEYBOARD: Mutex<Keyboard<layouts::Us104Key, ScancodeSet1>> =
+            Mutex::new(Keyboard::new(
+                ScancodeSet1::new(), // Initialize with ScancodeSet1 (standard set of keyboard scancodes).
+                layouts::Us104Key,   // Use the US keyboard layout.
+                HandleControl::Ignore // Ignore special control key events.
+            ));
+    }
 
+    let mut keyboard = KEYBOARD.lock(); // Acquire a lock on the keyboard Mutex to ensure safe access.
+    let mut port = Port::new(0x60); // Create a new Port instance for port 0x60 (standard I/O port for keyboard input).
+
+    // Read the scancode from the keyboard input buffer.
+    let scancode: u8 = unsafe { port.read() };
+
+    // Add the scancode to the keyboard buffer and process the resulting key event.
+    // This operation may succeed, fail, or return None if the scancode doesn't generate an event.
+    if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
+        // If a valid key event is generated, process it to decode the keypress.
+        if let Some(key) = keyboard.process_keyevent(key_event) {
+            match key {
+                // If the key is a Unicode character (e.g., printable keys), print it.
+                DecodedKey::Unicode(character) => print!("{}", character),
+                // If the key is a raw key (e.g., function keys or other non-printable keys), print its debug representation.
+                DecodedKey::RawKey(key) => print!("{:?}", key),
+            }
+        }
+    }
+
+    // Notify the Programmable Interrupt Controller (PIC) that the keyboard interrupt has been handled.
+    // This prevents the PIC from blocking further keyboard interrupts.
     unsafe {
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Keyboard.as_u8());

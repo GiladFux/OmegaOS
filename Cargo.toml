@@ -12,6 +12,8 @@ volatile = "0.2.6"                 # Allows safe access to volatile memory regio
 spin = "0.5.2"                     # A spinlock implementation for synchronization.
 uart_16550 = "0.2.0"               # Crate for interacting with UART 16550 serial ports.
 pic8259 = "0.10.1"                 # Crate for managing the 8259 Programmable Interrupt Controller.
+pc-keyboard = "0.7.0"              # For keybaord Interrupts
+
 
 # Configuring additional features for a dependency.
 [dependencies.lazy_static]
