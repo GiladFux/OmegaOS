@@ -1,26 +1,41 @@
+# [package] defines the metadata of the package.
 [package]
-name = "omega"
-version = "0.1.0"
-edition = "2021"
+name = "omega"                     # The name of your package (crate).
+version = "0.1.0"                  # The version of the package.
+edition = "2021"                   # The Rust edition being used (2021 edition).
 
+# [dependencies] lists all the crates (libraries) this package depends on.
 [dependencies]
-x86_64 = "0.14.2"
-bootloader = "0.9"
-volatile = "0.2.6"
-spin = "0.5.2"
-uart_16550 = "0.2.0"
+x86_64 = "0.14.2"                  # Provides abstractions for x86_64 hardware.
+bootloader = "0.9"                 # A crate for creating bootable Rust binaries.
+volatile = "0.2.6"                 # Allows safe access to volatile memory regions.
+spin = "0.5.2"                     # A spinlock implementation for synchronization.
+uart_16550 = "0.2.0"               # Crate for interacting with UART 16550 serial ports.
+pic8259 = "0.10.1"                 # Crate for managing the 8259 Programmable Interrupt Controller.
+pc-keyboard = "0.7.0"              # For keybaord Interrupts
 
 
+# Configuring additional features for a dependency.
 [dependencies.lazy_static]
-version = "1.0"
-features = ["spin_no_std"]
+version = "1.0"                    # Version of lazy_static.
+features = ["spin_no_std"]         # Use the "spin_no_std" feature to work in no_std environments.
 
+# [package.metadata.bootimage] provides configuration for the `bootimage` tool, 
+# used to create bootable images for the operating system.
 [package.metadata.bootimage]
-test-args = ["-device", "isa-debug-exit,iobase=0xf4,iosize=0x04",
-"-device", "isa-debug-exit,iobase=0xf4,iosize=0x04", "-serial", "stdio",
-"-display", "none"]
-test-success-exit-code = 33         # (0x10 << 1) | 1
+test-args = [                      # Arguments passed to QEMU when running tests.
+    "-device", "isa-debug-exit,iobase=0xf4,iosize=0x04",  # Allows QEMU to exit with a specific code.
+    "-device", "isa-debug-exit,iobase=0xf4,iosize=0x04",  # Duplicate exit device (uncommon but valid).
+    "-serial", "stdio",            # Redirect serial output to standard output.
+    "-display", "none"             # Disable QEMU's graphical display.
+]
+test-success-exit-code = 33        # Exit code indicating test success (custom-defined, e.g., 0x21).
+
+# [[test]] defines custom test cases for your project.
+[[test]]
+name = "should_panic"              # Test name: "should_panic".
+harness = false                    # Disable the default Rust test harness.
 
 [[test]]
-name = "should_panic"
-harness = false
+name = "stack_overflow"            # Test name: "stack_overflow".
+harness = false                    # Disable the default Rust test harness.
