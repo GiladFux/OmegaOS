@@ -1,146 +1,173 @@
+// Import required structures and modules for Interrupt Descriptor Table (IDT) and interrupt handling
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
-use crate::println;
-use crate::print;
-use lazy_static::lazy_static;
-use crate::gdt;
-use x86_64::structures::idt::PageFaultErrorCode;
-use crate::hlt_loop;
+use crate::println; // Custom println macro for output
+use crate::print;   // Custom print macro for output
+use lazy_static::lazy_static; // Allows creating statics that require runtime initialization
+use crate::gdt; // Import Global Descriptor Table (GDT) related functionality
+use x86_64::structures::idt::PageFaultErrorCode; // Page fault error codes for handling page faults
+use crate::hlt_loop; // Custom function to halt the CPU in an infinite loop
 
+// Define a static Interrupt Descriptor Table (IDT) with lazy initialization
 lazy_static! {
     static ref IDT: InterruptDescriptorTable = {
-        let mut idt = InterruptDescriptorTable::new();
+        let mut idt = InterruptDescriptorTable::new(); // Create a new IDT instance
+        
+        // Set the breakpoint handler
         idt.breakpoint.set_handler_fn(breakpoint_handler);
+        
+        // Set the double fault handler with a custom stack using the GDT
         unsafe {
             idt.double_fault.set_handler_fn(double_fault_handler)
                 .set_stack_index(gdt::DOUBLE_FAULT_IST_INDEX);
         }
+
+        // Set the timer interrupt handler
         idt[InterruptIndex::Timer.as_usize()]
             .set_handler_fn(timer_interrupt_handler);
-            idt[InterruptIndex::Keyboard.as_usize()].set_handler_fn(keyboard_interrupt_handler);
-            idt.page_fault.set_handler_fn(page_fault_handler); 
 
-            
-        idt
+        // Set the keyboard interrupt handler
+        idt[InterruptIndex::Keyboard.as_usize()]
+            .set_handler_fn(keyboard_interrupt_handler);
+
+        // Set the page fault handler
+        idt.page_fault.set_handler_fn(page_fault_handler); 
+
+        idt // Return the configured IDT
     };
 }
 
+// Function to initialize and load the IDT
 pub fn init_idt() {
     IDT.load();
 }
 
+// Breakpoint interrupt handler
 extern "x86-interrupt" fn breakpoint_handler(
     stack_frame: InterruptStackFrame)
 {
+    // Print the exception type and the stack frame for debugging
     println!("EXCEPTION: BREAKPOINT\n{:#?}", stack_frame);
 }
 
+// Double fault interrupt handler
 extern "x86-interrupt" fn double_fault_handler(
     stack_frame: InterruptStackFrame, _error_code: u64) -> !
 {
+    // Panic and print the stack frame when a double fault occurs
     panic!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
 }
+
+// Timer interrupt handler
 extern "x86-interrupt" fn timer_interrupt_handler(
     _stack_frame: InterruptStackFrame)
 {
+    // Print a dot to indicate timer ticks
     print!(".");
-    unsafe { // notify the PIC that the interrupt was handled
+
+    // Notify the Programmable Interrupt Controller (PIC) that the interrupt has been handled
+    unsafe {
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());
     }
 }
+
+// Keyboard interrupt handler
 extern "x86-interrupt" fn keyboard_interrupt_handler(
     _stack_frame: InterruptStackFrame)
 {
-    // Importing necessary modules and dependencies for handling keyboard input
+    // Import required modules for handling keyboard input
     use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
     use spin::Mutex;
     use x86_64::instructions::port::Port;
 
-    // Define a global static keyboard instance protected by a Mutex for thread safety.
-    // This ensures exclusive access to the keyboard during input processing.
+    // Define a static keyboard instance for handling input with thread safety
     lazy_static! {
         static ref KEYBOARD: Mutex<Keyboard<layouts::Us104Key, ScancodeSet1>> =
             Mutex::new(Keyboard::new(
-                ScancodeSet1::new(), // Initialize with ScancodeSet1 (standard set of keyboard scancodes).
-                layouts::Us104Key,   // Use the US keyboard layout.
-                HandleControl::Ignore // Ignore special control key events.
+                ScancodeSet1::new(), // Initialize with ScancodeSet1
+                layouts::Us104Key,   // Use the US 104-key layout
+                HandleControl::Ignore // Ignore control keys
             ));
     }
 
-    let mut keyboard = KEYBOARD.lock(); // Acquire a lock on the keyboard Mutex to ensure safe access.
-    let mut port = Port::new(0x60); // Create a new Port instance for port 0x60 (standard I/O port for keyboard input).
+    // Lock the keyboard instance and create a port for reading scancodes
+    let mut keyboard = KEYBOARD.lock();
+    let mut port = Port::new(0x60); // Standard I/O port for keyboard input
 
-    // Read the scancode from the keyboard input buffer.
+    // Read the scancode from the keyboard buffer
     let scancode: u8 = unsafe { port.read() };
 
-    // Add the scancode to the keyboard buffer and process the resulting key event.
-    // This operation may succeed, fail, or return None if the scancode doesn't generate an event.
+    // Process the scancode and decode the key event
     if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
-        // If a valid key event is generated, process it to decode the keypress.
         if let Some(key) = keyboard.process_keyevent(key_event) {
             match key {
-                // If the key is a Unicode character (e.g., printable keys), print it.
-                DecodedKey::Unicode(character) => print!("{}", character),
-                // If the key is a raw key (e.g., function keys or other non-printable keys), print its debug representation.
-                DecodedKey::RawKey(key) => print!("{:?}", key),
+                DecodedKey::Unicode(character) => print!("{}", character), // Printable character
+                DecodedKey::RawKey(key) => print!("{:?}", key), // Raw key (e.g., function keys)
             }
         }
     }
 
-    // Notify the Programmable Interrupt Controller (PIC) that the keyboard interrupt has been handled.
-    // This prevents the PIC from blocking further keyboard interrupts.
+    // Notify the PIC that the interrupt has been handled
     unsafe {
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Keyboard.as_u8());
     }
 }
+
+// Test function for triggering a breakpoint exception
 #[test_case]
 fn test_breakpoint_exception() {
-    x86_64::instructions::interrupts::int3();
+    x86_64::instructions::interrupts::int3(); // Trigger a breakpoint exception
 }
 
+// Import the PIC module for handling hardware interrupts
 use pic8259::ChainedPics;
-use spin;
+use spin; // Provides Mutex for synchronization
 
-pub const PIC_1_OFFSET: u8 = 32; //sets up the offset of the first PIC (since first 32 are already caught by the excepetions)
-pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8; //setts up the offset of second PIC
+// Constants for setting PIC offsets
+pub const PIC_1_OFFSET: u8 = 32; // Offset for the first PIC (avoid CPU exceptions 0-31)
+pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8; // Offset for the second PIC
 
+// Static instance of ChainedPics for managing the two PICs
 pub static PICS: spin::Mutex<ChainedPics> =
     spin::Mutex::new(unsafe {
-        // Initialize a new ChainedPics instance with the specified offsets for the two PICs.
-        // This remaps the interrupt vectors so they do not overlap with CPU exceptions (0-31).
-        // The unsafe block is necessary because this operation directly interacts with
-        // hardware and assumes that the offsets provided are valid.
+        // Initialize the PICs with the specified offsets
         ChainedPics::new(PIC_1_OFFSET, PIC_2_OFFSET)
     });
 
-
+// Enum for interrupt indices
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum InterruptIndex {
-    Timer = PIC_1_OFFSET,
-    Keyboard,
-
+    Timer = PIC_1_OFFSET, // Timer interrupt
+    Keyboard, // Keyboard interrupt
 }
 
 impl InterruptIndex {
+    // Convert the interrupt index to a u8
     fn as_u8(self) -> u8 {
         self as u8
     }
 
+    // Convert the interrupt index to a usize
     fn as_usize(self) -> usize {
         usize::from(self.as_u8())
     }
 }
+
+// Page fault interrupt handler
 extern "x86-interrupt" fn page_fault_handler(
     stack_frame: InterruptStackFrame,
     error_code: PageFaultErrorCode,
 ) {
-    use x86_64::registers::control::Cr2;
+    use x86_64::registers::control::Cr2; // Import Cr2 for reading the accessed memory address
 
+    // Print information about the page fault
     println!("EXCEPTION: PAGE FAULT");
     println!("Accessed Address: {:?}", Cr2::read());
     println!("Error Code: {:?}", error_code);
     println!("{:#?}", stack_frame);
+
+    // Halt the CPU in an infinite loop
     hlt_loop();
 }
