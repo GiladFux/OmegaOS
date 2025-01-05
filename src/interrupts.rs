@@ -171,3 +171,4 @@ extern "x86-interrupt" fn page_fault_handler(
     // Halt the CPU in an infinite loop
     hlt_loop();
 }
+    
