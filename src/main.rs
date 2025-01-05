@@ -6,27 +6,32 @@
 
 use core::panic::PanicInfo;
 use omega::println;
+use bootloader::{BootInfo, entry_point};
 
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
+entry_point!(kernel_main);
+
+
+
+fn kernel_main(boot_info: &'static BootInfo) -> ! {
+    use omega::memory::active_level_4_table;
+    use x86_64::VirtAddr;
+
     println!("Hello World{}", "!");
     omega::init();
 
-    
-    // new
-    let ptr = 0xdeadbeaf as *mut u8;
-    unsafe { *ptr = 42; }
-    
-    use x86_64::registers::control::Cr3;
+    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
+    let l4_table = unsafe { active_level_4_table(phys_mem_offset) };
 
-    let (level_4_page_table, _) = Cr3::read();
-    println!("Level 4 page table at: {:?}", level_4_page_table.start_address());
-
-    #[cfg(test)]
-    test_main();
+    for (i, entry) in l4_table.iter().enumerate() {
+        if !entry.is_unused() {
+            println!("L4 Entry {}: {:?}", i, entry);
+        }
+    }
     println!("It did not crash!");
     omega::hlt_loop();
+
 }
+
 
 /// This function is called on panic.
 #[cfg(not(test))]
@@ -39,5 +44,5 @@ fn panic(info: &PanicInfo) -> ! {
 #[cfg(test)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    omega::test_panic_handler(info)
+    omega::test_panic_handler(info);
 }

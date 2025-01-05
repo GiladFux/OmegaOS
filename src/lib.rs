@@ -10,8 +10,10 @@ pub mod serial;
 pub mod vga_buffer;
 pub mod interrupts;
 pub mod gdt;
+pub mod memory;
 
-use core::panic::PanicInfo; // Core library for handling panic information
+
+use core::panic::PanicInfo; // Core library for     handling panic information
 
 /// Enum to define exit codes for QEMU, used to signal success or failure in tests
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -73,6 +75,21 @@ pub extern "C" fn _start() -> ! {
     init(); // Initialize the system (GDT, IDT, PICs, etc.)
     test_main(); // Run all tests
     hlt_loop(); // Halt the CPU after tests complete
+}
+
+#[cfg(test)]
+use bootloader::{entry_point, BootInfo};
+
+#[cfg(test)]
+entry_point!(test_kernel_main);
+
+/// Entry point for `cargo test`
+#[cfg(test)]
+fn test_kernel_main(_boot_info: &'static BootInfo) -> ! {
+    // like before
+    init();
+    test_main();
+    hlt_loop();
 }
 
 /// Custom panic handler for tests, delegates to `test_panic_handler`
