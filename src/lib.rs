@@ -19,8 +19,8 @@ use core::panic::PanicInfo; // Core library for     handling panic information
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum QemuExitCode {
-    Success = 0x10, // Exit code for success
-    Failed = 0x11,  // Exit code for failure
+    Success = 0x10, 
+    Failed = 0x11,  
 }
 
 /// Exits QEMU with the specified `QemuExitCode`
@@ -86,7 +86,6 @@ entry_point!(test_kernel_main);
 /// Entry point for `cargo test`
 #[cfg(test)]
 fn test_kernel_main(_boot_info: &'static BootInfo) -> ! {
-    // like before
     init();
     test_main();
     hlt_loop();
