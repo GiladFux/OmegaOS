@@ -7,13 +7,12 @@ edition = "2021"                   # The Rust edition being used (2021 edition).
 # [dependencies] lists all the crates (libraries) this package depends on.
 [dependencies]
 x86_64 = "0.14.2"                  # Provides abstractions for x86_64 hardware.
-bootloader = "0.9"                 # A crate for creating bootable Rust binaries.
 volatile = "0.2.6"                 # Allows safe access to volatile memory regions.
 spin = "0.5.2"                     # A spinlock implementation for synchronization.
 uart_16550 = "0.2.0"               # Crate for interacting with UART 16550 serial ports.
 pic8259 = "0.10.1"                 # Crate for managing the 8259 Programmable Interrupt Controller.
 pc-keyboard = "0.7.0"              # For keybaord Interrupts
-
+bootloader = { version = "0.9", features = ["map_physical_memory"]}
 
 # Configuring additional features for a dependency.
 [dependencies.lazy_static]
