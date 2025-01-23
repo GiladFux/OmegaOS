@@ -18,7 +18,7 @@ lazy_static! {
             static mut STACK: [u8; STACK_SIZE] = [0; STACK_SIZE];
             // Get the start and end addresses of the stack
             let stack_start = VirtAddr::from_ptr(unsafe { &STACK }); // Convert stack pointer to virtual address
-            let stack_end = stack_start + STACK_SIZE; // End of the stack
+            let stack_end = stack_start + STACK_SIZE as _; // End of the stack
             stack_end // Return the stack's end address
         };
         tss // Return the initialized TSS
@@ -30,9 +30,9 @@ lazy_static! {
     static ref GDT: (GlobalDescriptorTable, Selectors) = {
         let mut gdt = GlobalDescriptorTable::new(); // Create a new GDT
         // Add a code segment entry to the GDT for kernel code
-        let code_selector = gdt.add_entry(Descriptor::kernel_code_segment());
+        let code_selector = gdt.append(Descriptor::kernel_code_segment());
         // Add a TSS segment entry to the GDT for the TSS
-        let tss_selector = gdt.add_entry(Descriptor::tss_segment(&TSS));
+        let tss_selector = gdt.append(Descriptor::tss_segment(&TSS));
         // Return the GDT and its selectors
         (gdt, Selectors { code_selector, tss_selector })
     };
