@@ -19,6 +19,7 @@ use x86_64::{
 entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
+    use omega::allocator; // new import
     use omega::memory::{self, BootInfoFrameAllocator, EmptyFrameAllocator};
     use x86_64::structures::paging::Translate; // Ensure Translate is in scope
     use x86_64::{structures::paging::Page, VirtAddr}; // new import
@@ -30,6 +31,8 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
     let mut frame_allocator = memory::EmptyFrameAllocator;
 
+    allocator::init_heap(&mut mapper, &mut frame_allocator)
+        .expect("heap initialization failed");
     let x = Box::new(41);
 
 

@@ -13,6 +13,8 @@ uart_16550 = "0.2.0"               # Crate for interacting with UART 16550 seria
 pic8259 = "0.10.1"                 # Crate for managing the 8259 Programmable Interrupt Controller.
 pc-keyboard = "0.7.0"              # For keybaord Interrupts
 bootloader = { version = "0.9", features = ["map_physical_memory"]}
+linked_list_allocator = "0.9.0"
+
 
 # Configuring additional features for a dependency.
 [dependencies.lazy_static]
