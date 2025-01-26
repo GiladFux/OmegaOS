@@ -9,7 +9,6 @@ extern crate alloc;
 use core::panic::PanicInfo;
 use omega::println;
 use bootloader::{BootInfo, entry_point};
-use alloc::boxed::Box;
 
 use x86_64::{
     structures::paging::{Page, Size4KiB, Translate},
@@ -17,12 +16,13 @@ use x86_64::{
 };
 
 entry_point!(kernel_main);
+use alloc::{boxed::Box, vec, vec::Vec, rc::Rc};
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
-    use omega::allocator; // new import
+    use omega::allocator; 
     use omega::memory::{self, BootInfoFrameAllocator, EmptyFrameAllocator};
-    use x86_64::structures::paging::Translate; // Ensure Translate is in scope
-    use x86_64::{structures::paging::Page, VirtAddr}; // new import
+    use x86_64::structures::paging::Translate; 
+    use x86_64::{structures::paging::Page, VirtAddr}; 
 
     println!("Hello World{}", "!");
     omega::init();
@@ -33,8 +33,20 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     allocator::init_heap(&mut mapper, &mut frame_allocator)
         .expect("heap initialization failed");
-    let x = Box::new(41);
+    // allocate a number on the heap
+    let heap_value = Box::new(41);
+    println!("heap_value at {:p}", heap_value);
+    let mut vec = Vec::new();
+    for i in 0..500 {
+        vec.push(i);
+    }
+    println!("vec at {:p}", vec.as_slice());
 
+    let reference_counted = Rc::new(vec![1, 2, 3]);
+    let cloned_reference = reference_counted.clone();
+    println!("current reference count is {}", Rc::strong_count(&cloned_reference));
+    core::mem::drop(reference_counted);
+    println!("reference count is {} now", Rc::strong_count(&cloned_reference));
 
     // Run tests if in test mode
     #[cfg(test)]
