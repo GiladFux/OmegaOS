@@ -5,10 +5,12 @@
 #![feature(custom_test_frameworks)]
 #![test_runner(omega::test_runner)]
 #![reexport_test_harness_main = "test_main"]
-
+extern crate alloc;
 use core::panic::PanicInfo;
 use omega::println;
 use bootloader::{BootInfo, entry_point};
+use alloc::boxed::Box;
+
 use x86_64::{
     structures::paging::{Page, Size4KiB, Translate},
     VirtAddr,
@@ -28,13 +30,8 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
     let mut frame_allocator = memory::EmptyFrameAllocator;
 
-    // map an unused page
-    let page = Page::containing_address(VirtAddr::new(0));
-    memory::create_example_mapping(page, &mut mapper, &mut frame_allocator);
+    let x = Box::new(41);
 
-    // write the string `New!` to the screen through the new mapping
-    let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
-    unsafe { page_ptr.offset(400).write_volatile(0x_f021_f077_f065_f04e)};
 
     // Run tests if in test mode
     #[cfg(test)]
