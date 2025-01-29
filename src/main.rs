@@ -20,7 +20,7 @@ use alloc::{boxed::Box, vec, vec::Vec, rc::Rc};
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use omega::allocator; 
-    use omega::memory::{self, BootInfoFrameAllocator, EmptyFrameAllocator};
+    use omega::memory::{self, BootInfoFrameAllocator};
     use x86_64::structures::paging::Translate; 
     use x86_64::{structures::paging::Page, VirtAddr}; 
 
@@ -29,8 +29,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
-    let mut frame_allocator = memory::EmptyFrameAllocator;
-
+    let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
     allocator::init_heap(&mut mapper, &mut frame_allocator)
         .expect("heap initialization failed");
     // allocate a number on the heap

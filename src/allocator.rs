@@ -25,9 +25,7 @@ pub fn init_heap(
         Page::range_inclusive(heap_start_page, heap_end_page)
     };
 
-    unsafe {
-        ALLOCATOR.lock().init(HEAP_START as usize, HEAP_SIZE as usize);
-    }
+    
     for page in page_range {
         let frame = frame_allocator
             .allocate_frame()
@@ -37,6 +35,10 @@ pub fn init_heap(
             mapper.map_to(page, frame, flags, frame_allocator)?.flush() // update the TLB by flushing the cache
         };
     }
+    unsafe {
+        ALLOCATOR.lock().init(HEAP_START as usize, HEAP_SIZE as usize);
+    }
 
     Ok(())
 }
+
