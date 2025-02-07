@@ -1,7 +1,10 @@
 use alloc::alloc::{GlobalAlloc, Layout};
+
 use bump::BumpAllocator;
+use linked_list::LinkedListAllocator;
 
 pub mod bump;
+pub mod linked_list;
 
 pub const HEAP_START: u64 = 0x_4444_4444_0000;
 pub const HEAP_SIZE: u64 = 100 * 1024; // 100 KiB
@@ -14,7 +17,8 @@ use x86_64::{
 use linked_list_allocator::LockedHeap;
 
 #[global_allocator]
-static ALLOCATOR: Locked<BumpAllocator> = Locked::new(BumpAllocator::new());
+static ALLOCATOR: Locked<LinkedListAllocator> =
+    Locked::new(LinkedListAllocator::new());
 
 pub fn init_heap(
     mapper: &mut impl Mapper<Size4KiB>,
