@@ -87,16 +87,22 @@ unsafe fn active_level_4_table(physical_memory_offset: VirtAddr)
 }
 
 
-
-
-
-
-
-
-pub struct EmptyFrameAllocator;
-
-unsafe impl FrameAllocator<Size4KiB> for EmptyFrameAllocator {
+unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
     fn allocate_frame(&mut self) -> Option<PhysFrame> {
-        None
+        let frame = self.usable_frames().nth(self.next);
+        self.next += 1;
+        frame
     }
 }
+
+
+
+
+
+// pub struct EmptyFrameAllocator;
+
+// unsafe impl FrameAllocator<Size4KiB> for EmptyFrameAllocator {
+//     fn allocate_frame(&mut self) -> Option<PhysFrame> {
+//         None
+//     }
+// }
