@@ -32,6 +32,20 @@ test-args = [                      # Arguments passed to QEMU when running tests
 ]
 test-success-exit-code = 33        # Exit code indicating test success (custom-defined, e.g., 0x21).
 
+[dependencies.crossbeam-queue]
+version = "0.3.11"
+default-features = false
+features = ["alloc"]
+
+[dependencies.conquer-once]
+version = "0.2.0"
+default-features = false
+
+[dependencies.futures-util]
+version = "0.3.4"
+default-features = false
+features = ["alloc"]
+
 # [[test]] defines custom test cases for your project.
 [[test]]
 name = "should_panic"              # Test name: "should_panic".

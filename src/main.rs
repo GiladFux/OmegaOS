@@ -9,6 +9,8 @@ extern crate alloc;
 use core::panic::PanicInfo;
 use omega::println;
 use bootloader::{BootInfo, entry_point};
+use omega::task::{Task, simple_executor::SimpleExecutor};
+use omega::task::keyboard; // new
 
 use x86_64::{
     structures::paging::{Page, Size4KiB, Translate},
@@ -47,12 +49,28 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     core::mem::drop(reference_counted);
     println!("reference count is {} now", Rc::strong_count(&cloned_reference));
 
+
+
     // Run tests if in test mode
     #[cfg(test)]
     test_main();
 
+    let mut executor = SimpleExecutor::new();
+    executor.spawn(Task::new(example_task()));
+    executor.spawn(Task::new(keyboard::print_keypresses())); // new
+    executor.run();
+
     println!("It did not crash!");
     omega::hlt_loop()
+}
+
+async fn async_number() -> u32 {
+    42
+}
+
+async fn example_task() {
+    let number = async_number().await;
+    println!("async number: {}", number);
 }
 
 /// This function is called on panic.
