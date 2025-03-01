@@ -6,7 +6,7 @@ pub struct MyBlockDevice {
 
 impl MyBlockDevice {
     pub fn new(storage: &'static mut [u8]) -> Self {
-        Self { storage }
+        Self { storage}
     }
 }
 
@@ -21,5 +21,6 @@ impl BlockDevice for MyBlockDevice {
         let start = block_id * Self::BLOCK_SIZE;
         let end = start + Self::BLOCK_SIZE;
         self.storage[start..end].copy_from_slice(buf);
+        
     }
 }
