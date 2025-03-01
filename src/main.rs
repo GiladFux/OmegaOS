@@ -1,5 +1,3 @@
-// src/main.rs
-
 #![no_std]
 #![no_main]
 #![feature(custom_test_frameworks)]
@@ -10,12 +8,17 @@ use core::panic::PanicInfo;
 use omega::println;
 use bootloader::{BootInfo, entry_point};
 use omega::task::{Task, simple_executor::SimpleExecutor};
-use omega::task::keyboard; // new
+use omega::task::keyboard; 
 
 use x86_64::{
     structures::paging::{Page, Size4KiB, Translate},
     VirtAddr,
 };
+mod fs;
+
+use fs::buffer::MyBlockDevice;
+use fs::file_ops::{format_fs, create_file, write_file, read_file};
+static mut STORAGE: [u8; 512 * 1024] = [0; 512 * 1024]; // 512KB storage
 
 entry_point!(kernel_main);
 use alloc::{boxed::Box, vec, vec::Vec, rc::Rc};
@@ -28,29 +31,26 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     println!("Hello World{}", "!");
     omega::init();
-
+    let mut device = unsafe { MyBlockDevice::new(&mut STORAGE) };
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
+    // Format the filesystem
+    format_fs(&mut device);
     allocator::init_heap(&mut mapper, &mut frame_allocator)
         .expect("heap initialization failed");
-    // allocate a number on the heap
-    let heap_value = Box::new(41);
-    println!("heap_value at {:p}", heap_value);
-    let mut vec = Vec::new();
-    for i in 0..500 {
-        vec.push(i);
-    }
-    println!("vec at {:p}", vec.as_slice());
-
-    let reference_counted = Rc::new(vec![1, 2, 3]);
-    let cloned_reference = reference_counted.clone();
-    println!("current reference count is {}", Rc::strong_count(&cloned_reference));
-    core::mem::drop(reference_counted);
-    println!("reference count is {} now", Rc::strong_count(&cloned_reference));
 
 
+    // Create a file
+    create_file(&mut device, "test.txt", 2);
 
+    // Write data to the file
+    write_file(&mut device, 2, b"Hello, OS!");
+
+    // Read file content
+    let mut buffer = [0u8; 512];
+    read_file(&device, 2, &mut buffer);
+    println!("write and read file succeed!");
     // Run tests if in test mode
     #[cfg(test)]
     test_main();
