@@ -23,7 +23,6 @@ impl FileEntry {
         }
     }
 }
-
 pub struct FileTable {
     pub entries: Vec<FileEntry>,  // A vector holding all file entries
 }
@@ -52,20 +51,15 @@ impl FileTable {
     pub fn get_file_size(&self, filename: &str) -> Option<usize> {
         self.find_file(filename).map(|file| file.size)
     }
-    pub fn delete_file_by_block<T: BlockDevice>(&mut self, device: &mut T, block_id: usize) {
-        // Find the file entry by start_block
-        if let Some(index) = self.entries.iter().position(|entry| entry.start_block == block_id) {
-            let file_entry = self.entries.remove(index); // Remove file from table
+    pub fn delete_file_by_block<T: BlockDevice>(&mut self, device: &mut T, file_block: usize) {
+        // Find index of file in the table
+        if let Some(index) = self.entries.iter().position(|entry| entry.start_block == file_block) {
+            // Remove the file entry from the table
+            self.entries.remove(index);
 
-            // Mark the block as empty (fill it with 0)
-            let empty_block = [0u8; 512]; // Assuming block size is 512 bytes
-            device.write_block(file_entry.start_block, &empty_block);
-
-            println!("File '{}' removed, block {} marked as empty.", 
-                core::str::from_utf8(&file_entry.name).unwrap_or("Unknown"), 
-                file_entry.start_block);
-        } else {
-            println!("File with block ID {} not found.", block_id);
+            // Overwrite the block with zeroes (mark as empty)
+            let empty_block = [0u8; 512];
+            device.write_block(file_block, &empty_block);
         }
     }
 }

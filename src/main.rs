@@ -4,19 +4,20 @@
 #![test_runner(omega::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 extern crate alloc;
+mod fs;
 use core::panic::PanicInfo;
+use fs::block_device::BlockDevice;
+use fs::file_table::FileTable;
 use omega::println;
 use bootloader::{BootInfo, entry_point};
 use omega::task::{Task, simple_executor::SimpleExecutor};
 use omega::task::keyboard; 
-
+use crate::fs::buffer::MyBlockDevice;
 use x86_64::{
     structures::paging::{Page, Size4KiB, Translate},
     VirtAddr,
 };
-mod fs;
 
-use fs::buffer::MyBlockDevice;
 use fs::file_ops::{format_fs, create_file, write_file, read_file};
 static mut STORAGE: [u8; 512 * 1024] = [0; 512 * 1024]; // 512KB storage
 
@@ -39,18 +40,13 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     format_fs(&mut device);
     allocator::init_heap(&mut mapper, &mut frame_allocator)
         .expect("heap initialization failed");
-
-
+    static mut STORAGE: [u8; 1024 * 512] = [0; 1024 * 512];
+    let mut block_device = unsafe {MyBlockDevice::new(&mut STORAGE)};
+    let mut file_table = FileTable::new();
     // Create a file
-    create_file(&mut device, "test.txt", 2);
+    create_file(&mut file_table, "test.txt", 10);
 
-    // Write data to the file
-    write_file(&mut device, 2, b"Hello, OS!");
 
-    // Read file content
-    let mut buffer = [0u8; 512];
-    read_file(&device, 2, &mut buffer);
-    println!("write and read file succeed!");
     // Run tests if in test mode
     #[cfg(test)]
     test_main();
