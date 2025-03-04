@@ -25,9 +25,21 @@ pub fn format_fs<T: BlockDevice>(device: &mut T) {
 }
 
 
-pub fn create_file(storage: MyBlockDevice, filename: &str, start_block: usize) {
-    file_table.add_file(filename, storage);
+pub fn create_file(device: &mut MyBlockDevice, filename: &str) {
+    // Lock the file_table to prevent race conditions
+    {
+    let mut files_table = device.get_file_table().lock();
+
+    // Find the starting block for the file (current block)
+    let start_block = device.get_cur_block_id();
+    
+    // Add the file entry to the file table
+    files_table.add_file(filename, start_block);
+    }
+    // Increment the block ID for future use
+    device.increment_block_id();
 }
+
 
 
 pub fn write_file<T: BlockDevice>(device: &mut T, start_block: usize, data: &[u8]) { // write the data in the storage as bytes
