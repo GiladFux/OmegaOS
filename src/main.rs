@@ -6,7 +6,6 @@
 extern crate alloc;
 mod fs;
 use core::panic::PanicInfo;
-use fs::block_device::BlockDevice;
 use fs::file_table::FileTable;
 use omega::println;
 use omega::print;
@@ -23,7 +22,6 @@ use fs::file_ops::{format_fs, create_file, write_file, read_file};
 static mut STORAGE: [u8; 512 * 1024] = [0; 512 * 1024]; // 512KB storage
 
 entry_point!(kernel_main);
-use alloc::{boxed::Box, vec, vec::Vec, rc::Rc};
 fn print_hex(data: &[u8]) {
     println!("Data length: {} bytes", data.len());
     for byte in data {
@@ -42,11 +40,12 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
-    let mut device = unsafe { MyBlockDevice::new(&mut STORAGE) };
-
     // Initialize the allocator
     allocator::init_heap(&mut mapper, &mut frame_allocator)
         .expect("heap initialization failed");
+    let mut device = unsafe { MyBlockDevice::new(&mut STORAGE) };
+
+    
 
     // Format the filesystem
     format_fs(&mut device);
@@ -55,12 +54,12 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     create_file(&mut device, "file1");
     println!("created a file!");
     // Write some data to the file
-    write_file(&mut device, 1, "some data".as_bytes());
+    write_file(&mut device, "file1", "some data".as_bytes());
     println!("wrote to file!");
 
     // read the file
     let mut read_buffer = [0u8; 512]; // Buffer to store the read data
-    read_file(&device, 1, &mut read_buffer);
+    read_file(&device, "file1", &mut read_buffer);
 
     print_hex(&read_buffer);
 
