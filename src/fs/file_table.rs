@@ -31,7 +31,7 @@ impl FileTable {
     pub fn new(blocks_amount: usize) -> Self {
         FileTable {
             entries: Vec::new(),
-            available_blocks: Vec::from_iter(1..=blocks_amount), // Initializes with numbers 1 to max block
+            available_blocks: Vec::from_iter((1..=blocks_amount - 1).rev()), 
         }
     }
 
@@ -48,7 +48,11 @@ impl FileTable {
 
     pub fn find_file(&self, filename: &str) -> Option<&FileEntry> {
         for entry in &self.entries {
-            let name = core::str::from_utf8(&entry.name).ok()?;
+            // Find the null byte index in the name
+            let name = match core::str::from_utf8(&entry.name) {
+                Ok(name_str) => name_str.trim_end_matches('\0'),  // Trim null terminators
+                Err(_) => continue, // Skip invalid UTF-8 names
+            };
             if name == filename {
                 return Some(entry);
             }

@@ -28,9 +28,10 @@ impl BlockDevice for MyBlockDevice {
 
     fn write_block(&mut self, block_id: usize, buf: &[u8]) {
         let start = block_id * Self::BLOCK_SIZE;
-        let end = start + Self::BLOCK_SIZE;
+        let end = start + buf.len();  
         self.storage[start..end].copy_from_slice(buf);
     }
+    
     fn get_file_table(&self) -> &Mutex<FileTable>
     {
         &self.files_table // Return a reference to the Mutex

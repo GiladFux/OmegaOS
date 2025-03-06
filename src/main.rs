@@ -55,13 +55,12 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     println!("created a file!");
     // Write some data to the file
     write_file(&mut device, "file1", "some data".as_bytes());
-    println!("wrote to file!");
+     println!("wrote to file!");
 
     // read the file
     let mut read_buffer = [0u8; 512]; // Buffer to store the read data
     read_file(&device, "file1", &mut read_buffer);
-
-    print_hex(&read_buffer);
+    // print_hex(&read_buffer);
 
 
     // Run tests if in test mode
