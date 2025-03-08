@@ -60,7 +60,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     // read the file
     let mut read_buffer = [0u8; 512]; // Buffer to store the read data
     read_file(&device, "file1", &mut read_buffer);
-    // print_hex(&read_buffer);
+    print_hex(&read_buffer);
 
 
     // Run tests if in test mode
@@ -69,7 +69,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     let mut executor = SimpleExecutor::new();
     executor.spawn(Task::new(example_task()));
-    executor.spawn(Task::new(keyboard::print_keypresses())); // new
+    executor.spawn(Task::new(keyboard::print_keypresses())); 
     executor.run();
 
     println!("It did not crash!");
