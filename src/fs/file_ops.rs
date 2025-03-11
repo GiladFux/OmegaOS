@@ -61,7 +61,8 @@ pub fn write_file<T: BlockDevice>(device: &mut T, file_name: &str, data: &[u8]) 
 
 
 
-pub fn read_file<T: BlockDevice>(device: &T, file_name: &str) -> Option<Vec<u8>> {
+pub fn read_file<T: BlockDevice>(device: &T, file_name: &str) -> Option<Vec<u8>> {     // TODO: make the function support more than 512 bytes by dividing into multiple blocks
+
     let file_table = device.get_file_table().lock();
     if let Some(file_entry) = file_table.find_file(file_name) {
         let size = file_entry.size;
