@@ -17,7 +17,7 @@ use x86_64::{
     structures::paging::{Page, Size4KiB, Translate},
     VirtAddr,
 };
-
+use alloc::vec::Vec;
 use fs::file_ops::{format_fs, create_file, write_file, read_file};
 static mut STORAGE: [u8; 512 * 1024] = [0; 512 * 1024]; // 512KB storage
 
@@ -58,9 +58,15 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
      println!("wrote to file!");
 
     // read the file
-    let mut read_buffer = [0u8; 512]; // Buffer to store the read data
-    read_file(&device, "file1", &mut read_buffer);
-    print_hex(&read_buffer);
+    if let Some(data) = read_file(&device, "file1") {
+        if let Ok(text) = core::str::from_utf8(&data) {
+            println!("File content: {}", text);
+        } else {
+            println!("File content is not valid UTF-8");
+        }
+    } else {
+        println!("File not found!");
+    }
 
 
     // Run tests if in test mode

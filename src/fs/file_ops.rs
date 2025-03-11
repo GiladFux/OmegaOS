@@ -3,6 +3,7 @@ use crate::fs::superblock::Superblock;
 use crate::fs::file_table::FileTable;
 use omega::println;
 use super::buffer::MyBlockDevice;
+use alloc::vec::Vec;
 
 pub fn format_fs<T: BlockDevice>(device: &mut T) {
     let superblock = Superblock::new(1024); 
@@ -60,15 +61,20 @@ pub fn write_file<T: BlockDevice>(device: &mut T, file_name: &str, data: &[u8]) 
 
 
 
+pub fn read_file<T: BlockDevice>(device: &T, file_name: &str) -> Option<Vec<u8>> {
+    let file_table = device.get_file_table().lock();
+    if let Some(file_entry) = file_table.find_file(file_name) {
+        let size = file_entry.size;
 
-pub fn read_file<T: BlockDevice>(device: &T, file_name: &str, buf: &mut [u8]) { // TODO: support multiple blocks file 
-    let file_table = device.get_file_table().lock(); // Lock file table
-    if let Some(file_entry) = file_table.find_file(file_name)
-    {
-        device.read_block(file_entry.blocks[0], file_entry.size, buf);
-    }
-    else {
+        let mut buffer = Vec::with_capacity(size); 
+        unsafe { buffer.set_len(size); } 
+
+        device.read_block(file_entry.blocks[0], size, &mut buffer);
+
+        Some(buffer)
+    } else {
         println!("file not found!");
+        None
     }
 }
 
