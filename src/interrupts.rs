@@ -2,10 +2,12 @@ use crate::gdt;
 use crate::hlt_loop;
 use crate::print;
 use crate::println;
+use pc_keyboard::DecodedKey;
+use x86_64::instructions::port::Port;
+use crate::keyboard::{INPUT_BUFFER, INPUT_READY, INPUT_INDEX, KEYBOARD};
 use lazy_static::lazy_static; // basically static but initallized just when called for the first time
 use x86_64::structures::idt::PageFaultErrorCode;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
-
 const KEYBOARD_PORT: u16 = 0x60;
 
 //creating  and returning the idt
@@ -58,33 +60,42 @@ extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFr
 }
 
 extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStackFrame) {
-    use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
-    use spin::Mutex;
-    use x86_64::instructions::port::Port;
-
-    lazy_static! {
-        static ref KEYBOARD: Mutex<Keyboard<layouts::Us104Key, ScancodeSet1>> =
-            Mutex::new(Keyboard::new(
-                ScancodeSet1::new(),  // defining the most basic scancodeset (scancodeset is basically the protocol between the keyboard and the computer)
-                layouts::Us104Key,   //define the layout for the keyboard (default one )
-                HandleControl::Ignore  //currently ingnoring the control keys such as ctrl , alt ... (for now)
-            ));
-    }
-
     let mut keyboard = KEYBOARD.lock();
     let mut port = Port::new(KEYBOARD_PORT);
 
-    //this part reads the code from the predefined port and handles him
     let scancode: u8 = unsafe { port.read() };
 
-    crate::task::keyboard::add_scancode(scancode); 
+    if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
+        if let Some(key) = keyboard.process_keyevent(key_event) {
+            unsafe {
+                match key {
+                    DecodedKey::Unicode('\n') => {
+                        INPUT_READY = true;
+                    }
+                    DecodedKey::Unicode('\x08') => { // Backspace
+                        if INPUT_INDEX > 0 {
+                            INPUT_INDEX -= 1;
+                            print!("\x08 \x08"); // Clear character on screen
+                        }
+                    }
+                    DecodedKey::Unicode(character) => {
+                        if INPUT_INDEX < INPUT_BUFFER.len() - 1 {
+                            INPUT_BUFFER[INPUT_INDEX] = character as u8;
+                            INPUT_INDEX += 1;
+                            print!("{}", character); // Echo typed character
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
 
     unsafe {
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Keyboard.as_u8());
     }
 }
-
 #[test_case]
 fn test_breakpoint_exception() {
     x86_64::instructions::interrupts::int3(); // Trigger a breakpoint exception
@@ -110,7 +121,7 @@ pub enum InterruptIndex {
 }
 
 impl InterruptIndex {
-    fn as_u8(self) -> u8 {
+    pub fn as_u8(self) -> u8 {
         self as u8
     }
 
