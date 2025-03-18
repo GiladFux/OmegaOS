@@ -1,5 +1,6 @@
 use crate::gdt;
 use crate::hlt_loop;
+use crate::keyboard::read_input;
 use crate::print;
 use crate::println;
 use pc_keyboard::DecodedKey;
@@ -9,6 +10,7 @@ use lazy_static::lazy_static; // basically static but initallized just when call
 use x86_64::structures::idt::PageFaultErrorCode;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
 const KEYBOARD_PORT: u16 = 0x60;
+
 
 //creating  and returning the idt
 lazy_static! {
@@ -49,8 +51,7 @@ extern "x86-interrupt" fn double_fault_handler(
 }
 
 extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
-    // Print a dot to indicate timer ticks
-    print!(".");
+
 
     // Notifying the pic that the interrupt has been handled handled
     unsafe {
@@ -70,6 +71,7 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
             unsafe {
                 match key {
                     DecodedKey::Unicode('\n') => {
+
                         INPUT_READY = true;
                     }
                     DecodedKey::Unicode('\x08') => { // Backspace

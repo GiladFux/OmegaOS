@@ -76,7 +76,6 @@ pub fn read_input() -> Option<&'static str> {
         
         INPUT_INDEX = 0;
         INPUT_READY = false;
-        
         Some(input_str)
     }
 }

@@ -5,7 +5,7 @@
 #![reexport_test_harness_main = "test_main"]
 extern crate alloc;
 mod fs;
-
+mod cli;
 use core::panic::PanicInfo;
 use fs::file_table::FileTable;
 use omega::println;
@@ -14,6 +14,7 @@ use bootloader::{BootInfo, entry_point};
 use omega::task::{Task, simple_executor::SimpleExecutor};
 use omega::task::keyboard; 
 use crate::fs::buffer::MyBlockDevice;
+use crate::cli::cli_loop;
 use x86_64::{
     structures::paging::{Page, Size4KiB, Translate},
     VirtAddr,
@@ -45,30 +46,10 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     allocator::init_heap(&mut mapper, &mut frame_allocator)
         .expect("heap initialization failed");
     let mut device = unsafe { MyBlockDevice::new(&mut STORAGE) };
-
-    
-
     // Format the filesystem
     format_fs(&mut device);
-    
-    //  create a file
-    create_file(&mut device, "file1");
-    println!("created a file!");
-    // Write some data to the file
-    write_file(&mut device, "file1", "some data".as_bytes());
-     println!("wrote to file!");
 
-    // read the file
-    if let Some(data) = read_file(&device, "file1") {
-        if let Ok(text) = core::str::from_utf8(&data) {
-            println!("File content: {}", text);
-        } else {
-            println!("File content is not valid UTF-8");
-        }
-    } else {
-        println!("File not found!");
-    }
-
+    cli_loop();
 
     // Run tests if in test mode
     #[cfg(test)]

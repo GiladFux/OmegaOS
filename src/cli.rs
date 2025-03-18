@@ -1,5 +1,6 @@
-use crate::keyboard::read_input;
-
+use omega::keyboard::read_input;
+use omega::print;
+use omega::println;
 pub fn cli_loop() {
     loop {
         print!("> "); // CLI prompt
