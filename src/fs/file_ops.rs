@@ -79,6 +79,12 @@ pub fn read_file<T: BlockDevice>(device: &T, file_name: &str) -> Option<Vec<u8>>
     }
 }
 
-pub fn delete_file<T: BlockDevice>(device: &mut T, file_table: &mut FileTable, file_name: &str) {
-    file_table.delete_file_by_name(device, file_name);
+pub fn delete_file<T: BlockDevice>(device: &mut T, file_name: &str) {
+    // Lock the file table first to ensure the immutable borrow ends before the mutable borrow
+    let mut locked_file_table = device.get_file_table().lock();
+
+    // Now the immutable borrow is gone, and we can safely pass `device` as mutable
+    locked_file_table.delete_file_by_name(device, file_name);
 }
+
+    

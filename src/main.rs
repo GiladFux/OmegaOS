@@ -3,6 +3,7 @@
 #![feature(custom_test_frameworks)]
 #![test_runner(omega::test_runner)]
 #![reexport_test_harness_main = "test_main"]
+use spin::Mutex;
 extern crate alloc;
 mod fs;
 mod cli;
@@ -31,6 +32,11 @@ fn print_hex(data: &[u8]) {
     }
     println!();
 }
+
+
+static DEVICE: Mutex<Option<MyBlockDevice>> = Mutex::new(None); // Use Mutex to make it mutable and safe
+
+
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use omega::allocator; 
     use omega::memory::{self, BootInfoFrameAllocator};
@@ -49,29 +55,26 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     // Format the filesystem
     format_fs(&mut device);
 
+    
+    // Lock the DEVICE mutex and set it
+    let mut device_lock = DEVICE.lock();
+    *device_lock = Some(device); // Initialize the global device
     cli_loop();
 
     // Run tests if in test mode
     #[cfg(test)]
     test_main();
 
-    let mut executor = SimpleExecutor::new();
-    executor.spawn(Task::new(example_task()));
-    executor.spawn(Task::new(keyboard::print_keypresses())); 
-    executor.run();
+    // let mut executor = SimpleExecutor::new();
+    // executor.spawn(Task::new(example_task()));
+    // executor.spawn(Task::new(keyboard::print_keypresses())); 
+    // executor.run();
 
-    println!("It did not crash!");
+    // println!("It did not crash!");
     omega::hlt_loop()
 }
 
-async fn async_number() -> u32 {
-    42
-}
 
-async fn example_task() {
-    let number = async_number().await;
-    println!("async number: {}", number);
-}
 
 /// This function is called on panic.
 #[cfg(not(test))]
