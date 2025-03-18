@@ -73,6 +73,7 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
                     DecodedKey::Unicode('\n') => {
 
                         INPUT_READY = true;
+                        println!();
                     }
                     DecodedKey::Unicode('\x08') => { // Backspace
                         if INPUT_INDEX > 0 {
