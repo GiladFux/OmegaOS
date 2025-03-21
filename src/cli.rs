@@ -30,10 +30,7 @@ fn handle_command(command: &str) {
     // Lock the DEVICE mutex to safely access it
     // let mut device_lock = DEVICE.try_lock();
 
-    if parts.len() != 2
-    {
-        println!("Incorrect amount of parameters.");
-    }
+    
     if let Some(mut device_lock) = DEVICE.try_lock()
     {
 
@@ -42,8 +39,19 @@ fn handle_command(command: &str) {
         // Process the command
         if let Some(cmd) = parts.first() {
             match *cmd {
-                "help" => println!("Available commands: touch <file>, rm <file>, ls, cat <file>, help, exit"),
+                "help" => {
+                        if parts.len() != 1
+                        {
+                            println!("Incorrect amount of parameters.");
+                            return;
+                        }
+                        println!("Available commands: touch <file>, rm <file>, ls, cat <file>, help, exit")},
                 "touch" => {
+                    if parts.len() != 2
+                    {
+                        println!("Incorrect amount of parameters.");
+                        return;
+                    }
                     if let Some(filename) = parts.get(1) {
                         create_file(device, filename); // Use the device here
                         println!("Creating file: {}", filename);
@@ -52,6 +60,11 @@ fn handle_command(command: &str) {
                     }
                 }
                 "rm" => {
+                    if parts.len() != 2
+                    {
+                        println!("Incorrect amount of parameters.");
+                        return;
+                    }
                     if let Some(filename) = parts.get(1) {
                         println!("Removing file: {}", filename);
                         delete_file(device, filename);
@@ -60,6 +73,11 @@ fn handle_command(command: &str) {
                     }
                 }
                 "cat" => {
+                    if parts.len() != 2
+                    {
+                        println!("Incorrect amount of parameters.");
+                        return;
+                    }
                     if let Some(filename) = parts.get(1) {
                         if let Some(data) = read_file(device, filename){
                             if let Ok(text) = core::str::from_utf8(&data) {

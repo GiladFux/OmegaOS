@@ -70,7 +70,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         write_file(device, "file1", "some data".as_bytes());
         println!("wrote to file!");
     }
-    drop(device_lock);  // Immediately drop the lock to allow other parts to acquire it
+    drop(device_lock);  // drop the lock to allow other parts to acquire it
 
     cli_loop();
 
