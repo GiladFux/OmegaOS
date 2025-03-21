@@ -55,10 +55,23 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     // Format the filesystem
     format_fs(&mut device);
 
-    
+
     // Lock the DEVICE mutex and set it
     let mut device_lock = DEVICE.lock();
     *device_lock = Some(device); // Initialize the global device
+    
+
+     // Now use the device lock to access the device
+    if let Some(ref mut device) = *device_lock {
+        create_file(device, "file1");
+        println!("created a file!");
+
+        // Write some data to the file
+        write_file(device, "file1", "some data".as_bytes());
+        println!("wrote to file!");
+    }
+    drop(device_lock);  // Immediately drop the lock to allow other parts to acquire it
+
     cli_loop();
 
     // Run tests if in test mode
