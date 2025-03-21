@@ -1,6 +1,5 @@
 use crate::fs::block_device::BlockDevice;
 use crate::fs::superblock::Superblock;
-use crate::fs::file_table::FileTable;
 use omega::println;
 use super::buffer::MyBlockDevice;
 use alloc::vec::Vec;
@@ -63,7 +62,7 @@ pub fn write_file<T: BlockDevice>(device: &mut T, file_name: &str, data: &[u8]) 
 
 pub fn read_file<T: BlockDevice>(device: &T, file_name: &str) -> Option<Vec<u8>> {     // TODO: make the function support more than 512 bytes by dividing into multiple blocks
 
-    let file_table = device.get_file_table().lock();
+    let file_table = device.get_file_table_immutable().lock();
     if let Some(file_entry) = file_table.find_file(file_name) {
         let size = file_entry.size;
 
@@ -80,11 +79,18 @@ pub fn read_file<T: BlockDevice>(device: &T, file_name: &str) -> Option<Vec<u8>>
 }
 
 pub fn delete_file<T: BlockDevice>(device: &mut T, file_name: &str) {
-    // Lock the file table first to ensure the immutable borrow ends before the mutable borrow
-    let mut locked_file_table = device.get_file_table().lock();
+    let blocks_to_delete = {
+        let file_table = device.get_file_table();
+        let mut locked_table = file_table.lock();
+        
 
-    // Now the immutable borrow is gone, and we can safely pass `device` as mutable
-    locked_file_table.delete_file_by_name(device, file_name);
-}
-
+        locked_table.find_and_remove_file(file_name)
+    };
     
+    if let Some(blocks) = blocks_to_delete {
+        let empty_block = [0u8; 512]; 
+        for &block in &blocks {
+            device.write_block(block, &empty_block);
+        }
+    }
+}

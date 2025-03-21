@@ -27,7 +27,10 @@ fn handle_command(command: &str) {
 
     // Lock the DEVICE mutex to safely access it
     let mut device_lock = DEVICE.lock();
-
+    if parts.len() != 2
+    {
+        println!("Incorrect amount of parameters.");
+    }
     if let Some(device) = &mut *device_lock {
         // Process the command
         if let Some(cmd) = parts.first() {

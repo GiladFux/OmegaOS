@@ -28,6 +28,25 @@ pub struct FileTable {
     pub available_blocks: Vec<usize>
 }
 impl FileTable {
+    pub fn find_and_remove_file(&mut self, file_name: &str) -> Option<Vec<usize>> {
+        // Find the file entry
+        let index = self.entries.iter().position(|entry| {
+            let name_str = core::str::from_utf8(&entry.name).unwrap_or("").trim_end_matches('\0');
+            name_str == file_name
+        })?;
+        
+        // Get the blocks
+        let blocks = self.entries[index].blocks.clone();
+        
+        // Remove the entry
+        self.entries.remove(index);
+        
+        // Add blocks to available pool
+        self.available_blocks.extend(blocks.clone());
+        
+        Some(blocks)
+    }
+
     pub fn new(blocks_amount: usize) -> Self {
         FileTable {
             entries: Vec::new(),

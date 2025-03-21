@@ -1,6 +1,6 @@
 use crate::fs::block_device::BlockDevice;
 use super::file_table::FileTable;
-use omega::{print, println};
+use omega::println;
 use spin::Mutex;
 pub struct MyBlockDevice {
     storage: &'static mut [u8],
@@ -38,9 +38,12 @@ impl BlockDevice for MyBlockDevice {
         self.storage[start..end].copy_from_slice(buf);
     }
     
-    fn get_file_table(&self) -> &Mutex<FileTable>
-    {
-        &self.files_table // Return a reference to the Mutex
+    fn get_file_table(&mut self) -> &mut Mutex<FileTable> {
+        &mut self.files_table // Return a mutable reference to the Mutex
+    }
+    fn get_file_table_immutable(&self) -> &Mutex<FileTable> {
+        // Implementation depends on your design
+        &self.files_table
     }
 
 }
