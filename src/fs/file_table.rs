@@ -108,5 +108,14 @@ impl FileTable {
             // Return freed blocks to the available list
             self.available_blocks.extend(file_blocks);
         }
-    }    
+    }  
+    pub fn list_files<'a>(&'a self) -> Vec<&'a str> {
+        self.entries
+            .iter()
+            .filter_map(|entry| core::str::from_utf8(&entry.name)
+                .ok()
+                .map(|name| name.trim_end_matches('\0'))
+            )
+            .collect()
+    }  
 }
