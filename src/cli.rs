@@ -47,7 +47,6 @@ fn handle_command(command: &str) {
                         }
                         if let Some(filename) = parts.get(1) {
                             create_file(device, filename);
-                            println!("Creating file: {}", filename);
                         } else {
                             println!("Usage: touch <filename>");
                         }

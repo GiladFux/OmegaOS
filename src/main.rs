@@ -38,12 +38,11 @@ static DEVICE: Mutex<Option<MyBlockDevice>> = Mutex::new(None); // Use Mutex to 
 
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
+    println!("Welcome to OmegaOS!");
     use omega::allocator; 
     use omega::memory::{self, BootInfoFrameAllocator};
     use x86_64::structures::paging::Translate; 
     use x86_64::{structures::paging::Page, VirtAddr}; 
-
-    println!("Hello World{}", "!");
     omega::init();
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
@@ -59,17 +58,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     // Lock the DEVICE mutex and set it
     let mut device_lock = DEVICE.lock();
     *device_lock = Some(device); // Initialize the global device
-    
 
-     // Now use the device lock to access the device
-    if let Some(ref mut device) = *device_lock {
-        create_file(device, "file1");
-        println!("created a file!");
-
-        // Write some data to the file
-        write_file(device, "file1", "some data".as_bytes());
-        println!("wrote to file!");
-    }
     drop(device_lock);  // drop the lock to allow other parts to acquire it
 
     cli_loop();
@@ -78,12 +67,6 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     #[cfg(test)]
     test_main();
 
-    // let mut executor = SimpleExecutor::new();
-    // executor.spawn(Task::new(example_task()));
-    // executor.spawn(Task::new(keyboard::print_keypresses())); 
-    // executor.run();
-
-    // println!("It did not crash!");
     omega::hlt_loop()
 }
 
