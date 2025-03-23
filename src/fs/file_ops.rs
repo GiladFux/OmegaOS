@@ -86,7 +86,6 @@ pub fn read_file<T: BlockDevice>(device: &T, file_name: &str) -> Option<Vec<u8>>
 
         Some(buffer)
     } else {
-        println!("file not found!");
         None
     }
 }
