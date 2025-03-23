@@ -1,3 +1,4 @@
+use alloc::string::ToString;
 use futures_util::lock;
 use omega::keyboard::read_input;
 use omega::print;
@@ -8,6 +9,7 @@ use crate::fs::block_device::BlockDevice;
 use crate::fs::file_ops::create_file;
 use crate::fs::file_ops::delete_file;
 use crate::fs::file_ops::read_file;
+use crate::fs::file_ops::write_file;
 use crate::DEVICE;
 
 pub fn cli_loop() {
@@ -51,12 +53,27 @@ fn handle_command(command: &str) {
                         }
                     }
                     "wf" => {
-                        if parts.len() != 1 {
-                            println!("Incorrect amount of parameters.");
-                            return;
+                            if parts.len() != 2 {
+                                println!("Incorrect amount of parameters.");
+                                return;
+                            }
+
+                            // Create a fixed-size local buffer for the filename
+                            let original_filename = parts[1];
+                            let mut filename_buf = [0u8; 64];
+                            let len = original_filename.len().min(filename_buf.len());
+                            filename_buf[..len].copy_from_slice(original_filename.as_bytes());
+                            
+                            println!("Enter data for file:");
+                            if let Some(input) = read_input() {
+                                // Create a new string slice from the buffer
+                                if let Ok(safe_filename) = core::str::from_utf8(&filename_buf[..len]) {
+                                    write_file(device, safe_filename, input.as_bytes());
+                                }
+                            } else {
+                                println!("No data entered!");
+                            }
                         }
-                        // TODO: get input to put in the file
-                    }
                     "rm" => {
                         if parts.len() != 2 {
                             println!("Incorrect amount of parameters.");

@@ -20,6 +20,7 @@ impl MyBlockDevice {
     
 }
 
+
 impl BlockDevice for MyBlockDevice {
     fn read_block(&self, block_id: usize, data_size: usize, buf: &mut [u8]) {
         let start = block_id * Self::BLOCK_SIZE;
@@ -27,7 +28,7 @@ impl BlockDevice for MyBlockDevice {
         buf[..data_size].copy_from_slice(&self.storage[start..end]);
 
     }
-
+    
     fn write_block(&mut self, block_id: usize, buf: &[u8]) {
         let start = block_id * Self::BLOCK_SIZE;
         let end = start + buf.len();  

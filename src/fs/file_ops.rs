@@ -32,7 +32,7 @@ pub fn create_file(device: &mut MyBlockDevice, filename: &str) {
     }
 }
 
-pub fn write_file<T: BlockDevice>(device: &mut T, file_name: &str, data: &[u8]) { 
+pub fn write_file<T: BlockDevice>(device: &mut T, file_name: &str, data: &[u8]) {     
     // TODO: make the function support more than 512 bytes by dividing into multiple blocks
     let mut buffer = [0u8; 512];
     buffer[..data.len()].copy_from_slice(data);
@@ -40,23 +40,36 @@ pub fn write_file<T: BlockDevice>(device: &mut T, file_name: &str, data: &[u8]) 
     // Lock the file table to find the file's blocks
     let block = {
         let mut file_table = device.get_file_table().lock(); // Lock file table
-        if let Some(entry) = file_table.entries.iter_mut()
-            .find(|entry| entry.name.starts_with(file_name.as_bytes()))
-        {
-            // Update the size of the file entry to the new data length
+        
+        // Find the file entry by exact name match
+        let file_entry = file_table.entries.iter_mut()
+            .find(|entry| {
+                // Convert entry name to string and trim null bytes
+                let entry_name = core::str::from_utf8(&entry.name)
+                    .unwrap_or("")
+                    .trim_end_matches('\0');
+                
+                // Compare exact names
+                entry_name == file_name
+            });
+        
+        // Update size and get block in one pass
+        if let Some(entry) = file_entry {
             entry.size = data.len();
+            entry.blocks.first().copied()
+        } else {
+            println!("Error: File '{}' not found", file_name);
+            None
         }
-        file_table.entries.iter()
-            .find(|entry| entry.name.starts_with(file_name.as_bytes()))
-            .and_then(|entry| entry.blocks.first().copied()) // Extract block number
     };
 
     // Once the lock is released, perform the write operation
     if let Some(block) = block {
         device.write_block(block, &buffer); 
+    } else {
+        println!("No block found for file: '{}'", file_name);
     }
 }
-
 
 
 
