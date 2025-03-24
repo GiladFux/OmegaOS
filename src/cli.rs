@@ -36,7 +36,17 @@ fn handle_command(command: &str) {
                             println!("Did you mean 'help'?");
                             return;
                         }
-                        println!("Available commands: touch <file>, rm <file>, wf <file>, ls, cat <file>, help, exit");
+                        println!("Available commands: touch <file>, rm <file>, wf <file>, ls, cat <file>, echo, help, exit");
+                    }
+                    "echo" =>
+                    {
+                        if parts.len() < 2 {
+                            println!("Usage: echo <text>");
+                            return;
+                        }
+                        
+                        let text = parts[1..].join(" ");
+                        println!("{}", text);
                     }
                     "touch" => {
                         if parts.len() != 2 {
