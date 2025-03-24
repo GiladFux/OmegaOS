@@ -1,7 +1,8 @@
 use crate::fs::block_device::BlockDevice;
 use crate::fs::superblock::Superblock;
-use omega::println;
 use super::buffer::MyBlockDevice;
+use omega::println;
+use super::file_table::{self, FileTable};
 use alloc::vec::Vec;
 
 pub fn format_fs<T: BlockDevice>(device: &mut T) {
@@ -58,7 +59,7 @@ pub fn write_file<T: BlockDevice>(device: &mut T, file_name: &str, data: &[u8]) 
             entry.size = data.len();
             entry.blocks.first().copied()
         } else {
-            println!("Error: File '{}' not found", file_name);
+            println!("File not found");
             None
         }
     };
@@ -66,9 +67,7 @@ pub fn write_file<T: BlockDevice>(device: &mut T, file_name: &str, data: &[u8]) 
     // Once the lock is released, perform the write operation
     if let Some(block) = block {
         device.write_block(block, &buffer); 
-    } else {
-        println!("No block found for file: '{}'", file_name);
-    }
+    } 
 }
 
 

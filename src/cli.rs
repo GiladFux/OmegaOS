@@ -54,13 +54,11 @@ fn handle_command(command: &str) {
                                 println!("Incorrect amount of parameters.");
                                 return;
                             }
-
                             // Create a fixed-size local buffer for the filename
                             let original_filename = parts[1];
                             let mut filename_buf = [0u8; 64];
                             let len = original_filename.len().min(filename_buf.len());
                             filename_buf[..len].copy_from_slice(original_filename.as_bytes());
-                            
                             println!("Enter data for file:");
                             if let Some(input) = read_input() {
                                 // Create a new string slice from the buffer
