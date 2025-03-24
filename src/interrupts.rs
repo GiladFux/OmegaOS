@@ -1,6 +1,5 @@
 use crate::gdt;
 use crate::hlt_loop;
-use crate::keyboard::read_input;
 use crate::print;
 use crate::println;
 use pc_keyboard::DecodedKey;

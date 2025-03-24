@@ -10,28 +10,14 @@ mod cli;
 use core::panic::PanicInfo;
 use fs::file_table::FileTable;
 use omega::println;
-use omega::print;
 use bootloader::{BootInfo, entry_point};
-use omega::task::{Task, simple_executor::SimpleExecutor};
-use omega::task::keyboard; 
 use crate::fs::buffer::MyBlockDevice;
 use crate::cli::cli_loop;
-use x86_64::{
-    structures::paging::{Page, Size4KiB, Translate},
-    VirtAddr,
-};
-use alloc::vec::Vec;
-use fs::file_ops::{format_fs, create_file, write_file, read_file};
+
+use fs::file_ops::format_fs;
 static mut STORAGE: [u8; 512 * 1024] = [0; 512 * 1024]; // 512KB storage
 
 entry_point!(kernel_main);
-fn print_hex(data: &[u8]) {
-    println!("Data length: {} bytes", data.len());
-    for byte in data {
-        print!("{:02x} ", byte);
-    }
-    println!();
-}
 
 
 static DEVICE: Mutex<Option<MyBlockDevice>> = Mutex::new(None); // Use Mutex to make it mutable and safe
@@ -41,8 +27,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     println!("Welcome to OmegaOS!");
     use omega::allocator; 
     use omega::memory::{self, BootInfoFrameAllocator};
-    use x86_64::structures::paging::Translate; 
-    use x86_64::{structures::paging::Page, VirtAddr}; 
+    use x86_64::VirtAddr; 
     omega::init();
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
@@ -53,8 +38,6 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut device = unsafe { MyBlockDevice::new(&mut STORAGE) };
     // Format the filesystem
     format_fs(&mut device);
-
-
     // Lock the DEVICE mutex and set it
     let mut device_lock = DEVICE.lock();
     *device_lock = Some(device); // Initialize the global device

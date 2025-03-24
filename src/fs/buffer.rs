@@ -1,6 +1,5 @@
 use crate::fs::block_device::BlockDevice;
 use super::file_table::FileTable;
-use omega::println;
 use spin::Mutex;
 pub struct MyBlockDevice {
     storage: &'static mut [u8],

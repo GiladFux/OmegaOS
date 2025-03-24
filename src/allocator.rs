@@ -1,7 +1,3 @@
-use alloc::alloc::{GlobalAlloc, Layout};
-
-use bump::BumpAllocator;
-use linked_list::LinkedListAllocator;
 use fixed_size_block::FixedSizeBlockAllocator;
 
 pub mod bump;
@@ -16,7 +12,6 @@ use x86_64::{
     },
     VirtAddr,
 };
-use linked_list_allocator::LockedHeap;
 
 #[global_allocator]
 static ALLOCATOR: Locked<FixedSizeBlockAllocator> = Locked::new(

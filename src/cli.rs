@@ -1,5 +1,3 @@
-use alloc::string::ToString;
-use futures_util::lock;
 use omega::keyboard::read_input;
 use omega::print;
 use omega::println;
